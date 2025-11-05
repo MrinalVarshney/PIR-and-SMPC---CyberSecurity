@@ -1,0 +1,89 @@
+Q16. Why use both RSA and AES instead of just RSA?
+
+    Performance: RSA (public-key crypto) is computationally expensive and slow for bulk data. AES (symmetric crypto) is extremely fast and efficient for large messages.
+
+    Practicality: Hybrid encryption (RSA to encrypt a short symmetric key, AES to encrypt data) gives the best of both worlds: secure key exchange with high-performance bulk encryption.
+
+    Security properties: Modern protocols use authenticated symmetric modes (AES-GCM) for integrity + confidentiality. Public-key encrypting each message with RSA would be heavy and often less secure against chosen-ciphertext attacks unless carefully implemented.
+
+    Message size & padding: RSA can only encrypt up to a limited size (dependent on key size - padding overhead). AES has no such practical limit for bulk data.
+
+    Short: RSA for secure key transport; AES for fast, authenticated bulk encryption.
+
+Q17. Two-server PIR design (neat, simple, info-theoretic)
+
+    This is an information-theoretic two-server PIR (the classic simple scheme). Idea: client sends two correlated queries such that each server alone cannot deduce the index, but combined responses allow reconstruction.
+
+    Assumptions:
+
+    Two non-colluding servers S1 and S2, each holding identical copy of database DB[0..N-1].
+
+    Client wants record i.
+
+    High-level scheme (vector dot-product approach):
+
+    Client generates a random binary vector q1 of length N (entries 0/1).
+
+    Let q2 = q1 XOR e_i where e_i is unit vector with 1 at index i.
+
+    Send q1 to S1 and q2 to S2.
+
+    Each server computes r = sum_j q[j] * DB[j] (this is an element-wise linear combination; for general data records use per-field operations in appropriate group/field).
+
+    Servers return r1 and r2.
+
+    Client computes r = r1 XOR r2 (or subtraction if using arithmetic), which equals DB[i].
+
+    Pseudocode (concise):
+
+    # Client:
+    Input: index i, N
+    q1 = random_bits(N)                   # random 0/1 vector
+    e = zero_vector(N); e[i] = 1
+    q2 = q1 XOR e
+
+    send q1 to Server1
+    send q2 to Server2
+
+    receive r1 from Server1
+    receive r2 from Server2
+
+    record_i = r1 XOR r2   # if DB elements are bitstrings/XOR-able
+    return record_i
+
+    # Server (for each server independently):
+    Input: DB[0..N-1], query vector q[0..N-1]
+    # compute linear combination
+    r = zeros_like(DB[0])  # initialize accumulator sized like a record
+    for j in 0..N-1:
+        if q[j] == 1:
+            r = r XOR DB[j]   # XOR if records are bitstrings; otherwise use field add
+    send r back to client
+
+Q18. How does TLS handle key exchange? Compare to your hybrid implementation.
+
+    TLS (modern versions like TLS 1.2+ / 1.3) — key exchange summary:
+
+    TLS typically uses ephemeral Diffie-Hellman (ECDHE) for key exchange in modern configurations. This provides forward secrecy (compromise of long-term keys does not reveal past session keys).
+
+    The handshake authenticates parties using certificates (X.509) — server sends a certificate proving identity (signed by CA). Optionally, client auth via client certificate.
+
+    After the DH exchange, both sides derive symmetric keys (AES or ChaCha20-Poly1305) from the shared secret via a key-derivation function (HKDF). Then they use those symmetric keys for bulk encryption (AES-GCM or AEAD).
+
+    Older TLS variants allowed RSA key exchange where the client encrypts a pre-master secret with the server’s RSA public key (similar to your RSA+AES hybrid). But RSA key exchange lacks forward secrecy if the server private key is later compromised.
+
+    TLS 1.3 simplifies and mandates (for most cipher suites) ephemeral Diffie-Hellman, AEAD ciphers, and reduces round-trips.
+
+    Compare to your hybrid code:
+
+    Similarity: Your hybrid scheme uses RSA to encrypt a symmetric key, then uses AES-GCM for the session — conceptually identical to classic RSA-key-exchange + symmetric session in older TLS versions.
+
+    Differences / improvements in TLS:
+
+    TLS usually employs authenticated ephemeral key exchange (ECDHE) to get forward secrecy. Your example uses a single RSA keypair which does not provide forward secrecy.
+
+    TLS includes certificate verification / PKI to bind public key to server identity; your simple Python code sends the PEM public key without CA validation.
+
+    TLS builds multiple symmetric keys (client/server write keys, MAC keys) via a robust KDF (HKDF) with transcript mixing to prevent many subtle attacks; your code uses a raw AES key with direct use.
+
+    TLS handles versioning, downgrade protection, replay protections, key confirmation, and more protocol robustness not in the toy example.
