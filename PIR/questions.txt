@@ -1,0 +1,30 @@
+Q10. What privacy does trivial PIR provide? What can the server still learn?
+
+    Privacy provided: The server cannot tell which specific record the client accessed since it always sends the entire database.
+
+    Server can still learn: That a query occurred and when it occurred (timing, frequency), but not which record was requested.
+
+Q11. What are the limitations of trivial PIR? When is it practical?
+
+    Limitations:
+
+        Very high bandwidth (must download entire DB).
+
+        High latency for large datasets.
+
+        Impractical for real-world databases with millions of entries.
+
+    Practical when:
+
+    Database is small.
+
+    Privacy is more important than performance (e.g., research/demo).
+
+Q12. If each record is 1KB and the database has 10,000 records, how much bandwidth per query?
+   1 KB/record×10,000=10,000 KB=10 MB per query.
+
+Q13. In Wireshark, how can you tell if someone is using PIR vs normal queries?
+
+    Trivial PIR shows large uniform-sized data transfers for each query (entire DB each time).
+
+    Normal queries show small selective packets corresponding to only one record.

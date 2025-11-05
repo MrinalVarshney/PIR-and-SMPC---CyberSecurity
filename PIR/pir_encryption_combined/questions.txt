@@ -1,0 +1,21 @@
+Q14. What can an eavesdropper learn from encrypted traffic?
+
+    They can still observe:
+
+    Packet sizes (may hint at DB size)
+
+    Timing/frequency (when communication occurs)
+
+    But cannot know:
+
+        The content of data
+
+        Which record the client wanted
+
+        Any meaningful pattern in the transferred bytes
+
+Q15. How does combining PIR with encryption improve privacy vs using either alone?
+    Technique	        Protects Against Server	          Protects Against Eavesdropper	    Limitation
+    Encryption	        ❌ (Server knows query)	        ✅ (Hides content)	             Query pattern visible
+    PIR	                ✅ (Server doesn’t know record)	❌ (Traffic observable)	         High bandwidth
+    PIR + Encryption	✅	                        ✅	                                 Expensive, slower
